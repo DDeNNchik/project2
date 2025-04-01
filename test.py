@@ -11,6 +11,10 @@ wind_w, wind_h = 1400, 1000
 window = pygame.display.set_mode((wind_w, wind_h))
 pygame.display.set_caption("test")
 
+background1 = pygame.image.load("img/background.jpg")
+background1 = pygame.transform.scale(background1, (wind_w, wind_h))
+
+
 class Sprite:
     def __init__(self, x, y, w, h, image):
         self.rect = pygame.Rect(x, y, w, h)
@@ -20,8 +24,9 @@ class Sprite:
     def draw(self):
         window.blit(self.image, (self.rect.x-camera.rect.x, self.rect.y))
 
+
 player_images_stand = [pygame.image.load(f"img/adventBoy_stand{i}.png") for i in range(1, 3)]
-player_images_stand = [pygame.transform.scale(img, (100, 100)) for img in player_images_stand]  # Scale images
+player_images_stand = [pygame.transform.scale(img, (100, 100)) for img in player_images_stand]
 
 class Player(Sprite):
     def __init__(self, x, y, w, h, images_right, images_jump, images_stand, speed):
@@ -36,9 +41,9 @@ class Player(Sprite):
         self.is_jumping = False
         self.jump_count = 10
         self.walk_count = 0
-        self.walk_frame_count = 0  # Counter for slowing down the walking animation
+        self.walk_frame_count = 0
         self.stand_count = 0
-        self.stand_frame_count = 0  # Counter for slowing down the standing animation
+        self.stand_frame_count = 0
         self.direction = 'right'
         
     
@@ -48,26 +53,25 @@ class Player(Sprite):
             if self.rect.right < wind_w:
                 self.rect.x += self.speed
                 self.walk_frame_count += 1
-                if self.walk_frame_count >= 5:  # Adjust this value to make the walking animation slower or faster
+                if self.walk_frame_count >= 5:
                     self.walk_count = (self.walk_count + 1) % len(self.images_right)
                     self.walk_frame_count = 0
                 self.image = self.images_right[self.walk_count]
                 self.direction = 'right'
-                #print(f"Moving right: walk_count={self.walk_count}")
+
         elif keys[a]:
             if self.rect.x > 0:
                 self.rect.x -= self.speed
                 self.walk_frame_count += 1
-                if self.walk_frame_count >= 5:  # Adjust this value to make the walking animation slower or faster
+                if self.walk_frame_count >= 5: 
                     self.walk_count = (self.walk_count + 1) % len(self.images_left)
                     self.walk_frame_count = 0
                 self.image = self.images_left[self.walk_count]
                 self.direction = 'left'
-                #print(f"Moving left: walk_count={self.walk_count}")
         else:
             self.walk_count = 0
             self.stand_frame_count += 1
-            if self.stand_frame_count >= 10:  # Adjust this value to make the standing animation slower or faster
+            if self.stand_frame_count >= 10: 
                 self.stand_count = (self.stand_count + 1) % len(self.images_stand_right)
                 self.stand_frame_count = 0
             if self.direction == 'right':
@@ -83,9 +87,9 @@ class Player(Sprite):
                     neg = -1
                 self.rect.y -= (self.jump_count ** 2) * 0.5 * neg
                 if self.direction == 'right':
-                    self.image = self.images_jump_right[0]  # Set jumping image for right direction
+                    self.image = self.images_jump_right[0] 
                 else:
-                    self.image = self.images_jump_left[0]  # Set jumping image for left direction
+                    self.image = self.images_jump_left[0] 
                 self.jump_count -= 1
             else:
                 self.is_jumping = False
@@ -93,8 +97,47 @@ class Player(Sprite):
 
     def fire(self, target_pos):
         direction_vector = pygame.math.Vector2(target_pos) - pygame.math.Vector2(self.rect.center)
-        direction_vector = direction_vector.normalize() * 15  # Normalize and scale the vector
+        direction_vector = direction_vector.normalize() * 15 
         bullets.append(Bullet(self.rect.centerx, self.rect.centery, 25, 50, bullet_img, direction_vector))
+
+class Enemy(Sprite):
+    def __init__(self, x, y, w, h, images, speed, patrol_range):
+        super().__init__(x, y, w, h, images[0])
+        self.images_right = images
+        self.images_left = [pygame.transform.flip(img, True, False) for img in images]
+        self.speed = speed
+        self.patrol_range = patrol_range
+        self.start_x = x
+        self.direction = 'right'
+        self.walk_count = 0
+        self.walk_frame_count = 0
+
+    def move(self):
+        if self.direction == 'right':
+            self.rect.x += self.speed
+            if self.rect.x >= self.start_x + self.patrol_range:
+                self.direction = 'left'
+        else:
+            self.rect.x -= self.speed
+            if self.rect.x <= self.start_x:
+                self.direction = 'right'
+
+        self.walk_frame_count += 1
+        if self.walk_frame_count >= 20:
+            self.walk_count = (self.walk_count + 1) % len(self.images_right)
+            self.walk_frame_count = 0
+
+        # Set the correct image based on direction
+        if self.direction == 'right':
+            self.image = self.images_right[self.walk_count]
+        else:
+            self.image = self.images_left[self.walk_count]
+
+enemy_images = [
+    pygame.image.load("monkey1.png"),  
+    pygame.image.load("monkey2.png")  
+]
+enemy_images = [pygame.transform.scale(img, (200, 200)) for img in enemy_images]  
 
 class Bullet(Sprite):
     def __init__(self, x, y, w, h, image, velocity):
@@ -142,30 +185,54 @@ for row in lvl1:
 bullet_img = pygame.image.load("img/bullet.png")
 bullets = []
 
-# Load walking animation frames
 player_images_right = [pygame.image.load(f"img/adventBoy_walk{i}.png") for i in range(1, 4)]
-player_images_right = [pygame.transform.scale(img, (100, 100)) for img in player_images_right]  # Scale images 3 times
+player_images_right = [pygame.transform.scale(img, (100, 100)) for img in player_images_right]  
 
-# Load jumping animation frames
 player_images_jump = [pygame.image.load("img/adventBoy_jump.png")]
-player_images_jump = [pygame.transform.scale(img, (100, 100)) for img in player_images_jump]  # Scale images 3 times
+player_images_jump = [pygame.transform.scale(img, (100, 100)) for img in player_images_jump]  
 
-player = Player(50, 850, 100, 100, player_images_right, player_images_jump, player_images_stand, 5)  # Update player size
-
-
+player = Player(50, 850, 100, 100, player_images_right, player_images_jump, player_images_stand, 5)  
+enemy = Enemy(900, 650, 100, 100, enemy_images, 2, 200) 
+start_button = Sprite(510, 400, 400, 200, pygame.image.load("img/start_button.png"))
 
 game = True
-while game:
-    window.fill((0, 100, 50))
-    for bullet in bullets:
-        bullet.draw()
-        bullet.move()
-    player.draw()
-    player.move(pygame.K_a, pygame.K_d)
-    player.jump()
+menu = True
 
-    for b in blocks:
-        b.draw()
+while game:
+    if menu:
+        window.blit(background1, (0, 0))
+        start_button.draw()
+        if pygame.mouse.get_pressed()[0]:
+            if start_button.rect.collidepoint(pygame.mouse.get_pos()):
+                menu = False
+
+    if not menu:    
+        pygame.init()
+        pygame.mixer.music.load('jungle.mp3')
+        pygame.mixer.music.play(-1)
+        pygame.mixer.music.set_volume(0.05)
+
+        window.fill((0, 100, 50))
+        for bullet in bullets:
+            bullet.draw()
+            bullet.move()
+
+
+            if enemy and enemy.rect.colliderect(bullet.rect): 
+                bullets.remove(bullet)  
+                enemy = None  
+                break 
+
+        if enemy:
+            enemy.draw()
+            enemy.move()
+
+        player.draw()
+        player.move(pygame.K_a, pygame.K_d)
+        player.jump()
+
+        for b in blocks:
+            b.draw()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -174,7 +241,7 @@ while game:
             if event.key == pygame.K_SPACE and not player.is_jumping:
                 player.is_jumping = True
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left mouse button
+            if event.button == 1:
                 player.fire(event.pos)
 
     pygame.display.update()
