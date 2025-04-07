@@ -13,6 +13,8 @@ pygame.display.set_caption("test")
 
 background1 = pygame.image.load("img/background.jpg")
 background1 = pygame.transform.scale(background1, (wind_w, wind_h))
+background2 = pygame.image.load("background2.jpg")
+background2 = pygame.transform.scale(background2, (wind_w, wind_h))
 
 
 class Sprite:
@@ -211,6 +213,7 @@ while game:
         pygame.mixer.music.load('jungle.mp3')
         pygame.mixer.music.play(-1)
         pygame.mixer.music.set_volume(0.05)
+        window.blit(background2, (0, 0))
 
         window.fill((0, 100, 50))
         for bullet in bullets:
